@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Domótico</title>
+
+  <!-- 🎨 Estilos visuales para el panel -->
+  <style>
+    body {
+      font-family: Arial;
+      background-color: #f0f4f8;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .bloque {
+      background-color: #fff;
+      border: 2px solid #0077cc;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 20px auto;
+      width: 95%;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    label {
+      min-width: 120px;
+    }
+    input, select, button {
+      padding: 6px 8px;
+      font-size: 1em;
+    }
+    button {
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    .resultado {
+      margin-top: 15px;
+      background-color: #eef;
+      padding: 10px;
+      border-radius: 10px;
+      overflow-x: auto; /* permite scroll horizontal si la tabla es ancha */
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+    th {
+      background-color: #0077cc;
+      color: white;
+    }
+    /* 🎨 Colores de alerta */
+    .tension-alta { background-color: #ffcccc; }   /* rojo tenue */
+    .tension-baja { background-color: #ccffcc; }   /* verde tenue */
+    .presencia { background-color: #cce5ff; }      /* celeste */
+
+    /* 📊 Grillas de gráficos con separación marcada */
+    .graficos {
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 80px;    /* separación entre columnas */
+      row-gap: 50px;       /* separación entre filas */
+      justify-content: center;
+      margin-top: 30px;    /* separación del bloque superior */
+    }
+    .grafico {
+      flex: 1 1 45%;       /* dos por fila */
+      min-width: 340px;
+      max-width: 540px;
+    }
+    canvas {
+      width: 100% !important;
+      height: 260px !important; /* gráficos más chicos */
+    }
+  </style>
+
+  <!-- 📊 Librería Chart.js para gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <h1>📊 Panel de Sensores Domóticos</h1>
+  <p id="infoLimites" style="text-align:center; font-weight:bold;"></p>
+
+  <!-- 🔍 Bloque 1: Consulta de registros -->
+  <div class="bloque">
+    <h2>Consulta Detallada por Fecha y Hora</h2>
+    <form id="formConsultaRango">
+      <label>Desde Fecha:</label>
+      <input type="date" name="fecha_inicio" required>
+      <label>Hora (HH:MM):</label>
+      <!-- ⏱️ Selector de hora: HH y MM (00/15/30/45) -->
+      <select name="hora_inicio_h" required>
+        <!-- 00 a 23 -->
+        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}</option>`).join('')}
+      </select>
+      <select name="hora_inicio_m" required>
+        <option value="00">00</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+        <option value="45">45</option>
+      </select>
+
+      <label>Hasta Fecha:</label>
+      <input type="date" name="fecha_fin" required>
+      <label>Hora (HH:MM):</label>
+      <!-- ⏱️ Selector de hora: HH y MM (00/15/30/45) -->
+      <select name="hora_fin_h" required>
+        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}</option>`).join('')}
+      </select>
+      <select name="hora_fin_m" required>
+        <option value="00">00</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+        <option value="45">45</option>
+      </select>
+
+      <button type="submit">Consultar</button>
+    </form>
+    <div id="resultadoConsultaRango" class="resultado"></div>
+  </div>
+
+  <!-- 📈 Bloque 2: Gráficos -->
+  <div class="bloque">
+    <h2>Gráficos de Parámetros Domóticos</h2>
+    <form id="formEnergia">
+      <label>Desde Fecha:</label>
+      <input type="date" name="fecha_inicio" required>
+      <label>Hora (HH:MM):</label>
+      <!-- ⏱️ Selector de hora: HH y MM (00/15/30/45) -->
+      <select name="hora_inicio_h" required>
+        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}</option>`).join('')}
+      </select>
+      <select name="hora_inicio_m" required>
+        <option value="00">00</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+        <option value="45">45</option>
+      </select>
+
+      <label>Hasta Fecha:</label>
+      <input type="date" name="fecha_fin" required>
+      <label>Hora (HH:MM):</label>
+      <!-- ⏱️ Selector de hora: HH y MM (00/15/30/45) -->
+      <select name="hora_fin_h" required>
+        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}</option>`).join('')}
+      </select>
+      <select name="hora_fin_m" required>
+        <option value="00">00</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+        <option value="45">45</option>
+      </select>
+
+      <button type="submit">Consultar</button>
+    </form>
+    <div id="resultadoEnergia" class="resultado"></div>
+
+    <!-- 🎯 Gráficos en dos filas con separación marcada -->
+    <div class="graficos">
+      <div class="grafico"><canvas id="graficoElectricos"></canvas></div>
+      <div class="grafico"><canvas id="graficoLuz"></canvas></div>
+    </div>
+    <div class="graficos">
+      <div class="grafico"><canvas id="graficoClima"></canvas></div>
+      <div class="grafico"><canvas id="graficoPresencia"></canvas></div>
+    </div>
+  </div>
+  <script>
+    // 🧩 Utilidad: construir HH:MM a partir de selects
+    const horaSeleccion = (form, prefijo) => {
+      const h = form.querySelector(`[name="${prefijo}_h"]`).value;
+      const m = form.querySelector(`[name="${prefijo}_m"]`).value;
+      return `${h}:${m}`;
+    };
+
+    // 🔄 Mostrar límites de registros disponibles
+    fetch('/limites')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('infoLimites').textContent =
+          `Datos disponibles desde ${data.inicio} hasta ${data.fin}`;
+      });
+
+    // 📋 Consulta detallada por rango (bloque 1)
+    document.getElementById('formConsultaRango').onsubmit = async function(e) {
+      e.preventDefault();
+      const form = this;
+      const datos = {
+        fecha_inicio: form.querySelector('[name="fecha_inicio"]').value,
+        hora_inicio: horaSeleccion(form, 'hora_inicio'),
+        fecha_fin: form.querySelector('[name="fecha_fin"]').value,
+        hora_fin: horaSeleccion(form, 'hora_fin')
+      };
+
+      try {
+        const res = await fetch('/consulta-rango', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+
+        const resultado = await res.json();
+        if (resultado.length > 0) {
+          // 🧾 Construimos la tabla estilo Excel con formateos
+          let tabla = '<table><thead><tr>';
+          Object.keys(resultado[0]).forEach(col => { tabla += `<th>${col}</th>`; });
+          tabla += '</tr></thead><tbody>';
+
+          resultado.forEach(row => {
+            tabla += '<tr>';
+            Object.entries(row).forEach(([col, val]) => {
+              let clase = '';
+              // ⚡ Resaltado de tensión
+              if (col === 'tension_db_V') {
+                if (val > 230) clase = 'tension-alta';
+                else if (val < 215) clase = 'tension-baja';
+              }
+              // 🚶 Resaltado de presencia
+              if (col === 'presencia_db' && val == 1) clase = 'presencia';
+              // ⏱️ Hora sin segundos
+              if (col === 'hora_db' && typeof val === 'string') val = val.slice(0, 5);
+              // 🔢 Energías con dos decimales
+              if (col === 'energia_db_kWh' || col === 'energia_acumulada_db_kWh') {
+                const n = Number(val);
+                val = Number.isFinite(n) ? n.toFixed(2) : val;
+              }
+              tabla += `<td class="${clase}">${val}</td>`;
+            });
+            tabla += '</tr>';
+          });
+
+          tabla += '</tbody></table>';
+          document.getElementById('resultadoConsultaRango').innerHTML = tabla;
+        } else {
+          document.getElementById('resultadoConsultaRango').innerHTML = '<p>No se encontraron datos.</p>';
+        }
+      } catch (error) {
+        document.getElementById('resultadoConsultaRango').innerHTML = `<p>Error: ${error.message}</p>`;
+      }
+    };
+
+    // 📊 Instancias Chart seguras (para destruir antes de recrear)
+    let chartElectricos = null;
+    let chartLuz = null;
+    let chartClima = null;
+    let chartPresencia = null;
+
+    // 📊 Consulta con gráficos agrupados (bloque 2)
+    document.getElementById('formEnergia').onsubmit = async function(e) {
+      e.preventDefault();
+      const form = this;
+      const datos = {
+        fecha_inicio: form.querySelector('[name="fecha_inicio"]').value,
+        hora_inicio: horaSeleccion(form, 'hora_inicio'),
+        fecha_fin: form.querySelector('[name="fecha_fin"]').value,
+        hora_fin: horaSeleccion(form, 'hora_fin')
+      };
+
+      try {
+        const res = await fetch('/consulta-rango', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+
+        const resultado = await res.json();
+        if (resultado.length > 0) {
+          // ⏱️ Etiquetas con hora sin segundos
+          const labels = resultado.map(d => {
+            const hora = typeof d.hora_db === 'string' ? d.hora_db.slice(0, 5) : d.hora_db;
+            return `${d.fecha_db} ${hora}`;
+          });
+
+          // 🔢 Energías con dos decimales en datasets
+          const energia = resultado.map(d => {
+            const n = Number(d.energia_db_kWh);
+            return Number.isFinite(n) ? Number(n.toFixed(2)) : d.energia_db_kWh;
+          });
+          const energiaAcum = resultado.map(d => {
+            const n = Number(d.energia_acumulada_db_kWh);
+            return Number.isFinite(n) ? Number(n.toFixed(2)) : d.energia_acumulada_db_kWh;
+          });
+
+          // 🧼 Destruir gráficos previos si existen
+          [chartElectricos, chartLuz, chartClima, chartPresencia].forEach(ch => { if (ch) ch.destroy(); });
+
+          // ⚡ Gráfico 1: Parámetros eléctricos
+          chartElectricos = new Chart(document.getElementById('graficoElectricos'), {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                { label: 'Tensión (V)', data: resultado.map(d => d.tension_db_V), borderColor: 'green', fill: false },
+                { label: 'Corriente (A)', data: resultado.map(d => d.corriente_db_A), borderColor: 'blue', fill: false },
+                { label: 'Energía (kWh)', data: energia, borderColor: 'black', fill: false },
+                { label: 'Energía Acumulada (kWh)', data: energiaAcum, borderColor: 'darkred', fill: false }
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Parámetros Eléctricos' },
+                tooltip: {
+                  callbacks: {
+                    label: (ctx) => {
+                      const y = ctx.parsed.y;
+                      const label = ctx.dataset.label || '';
+                      return typeof y === 'number' && (label.includes('Energía'))
+                        ? `${label}: ${y.toFixed(2)}`
+                        : `${label}: ${y}`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+
+          // 💡 Gráfico 2: Nivel de luz
+          chartLuz = new Chart(document.getElementById('graficoLuz'), {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                { label: 'Nivel de Luz (lux)', data: resultado.map(d => d.nivel_luz_Lux), borderColor: 'orange', fill: false }
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Nivel de Luz Ambiental' }
+              }
+            }
+          });
+
+          // 🌡️ Gráfico 3: Temperatura y Humedad
+          chartClima = new Chart(document.getElementById('graficoClima'), {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                { label: 'Temperatura (°C)', data: resultado.map(d => d.temperatura_db_C), borderColor: 'red', fill: false },
+                { label: 'Humedad (%)', data: resultado.map(d => d.humedad_db_porciento), borderColor: 'blue', fill: false }
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Temperatura y Humedad' }
+              }
+            }
+          });
+
+          // 🚶 Gráfico 4: Presencia
+          chartPresencia = new Chart(document.getElementById('graficoPresencia'), {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                { label: 'Presencia (1 = detectado, 0 = ausente)', data: resultado.map(d => d.presencia_db), borderColor: 'purple', fill: false }
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Detección de Presencia' }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1,
+                    callback: value => value === 1 ? 'Presente' : 'Ausente'
+                  }
+                }
+              }
+            }
+          });
+
+        } else {
+          document.getElementById('resultadoEnergia').innerHTML = '<p>No se encontraron datos.</p>';
+        }
+      } catch (error) {
+        document.getElementById('resultadoEnergia').innerHTML = `<p>Error: ${error.message}</p>`;
+      }
+    };
+
+    // 🛠️ Inicializar opciones de horas por JS (evita escribir 24 opciones en HTML)
+    const initHoraSelects = () => {
+      document.querySelectorAll('select[name$="_h"]').forEach(sel => {
+        sel.innerHTML = '';
+        for (let h = 0; h < 24; h++) {
+          const hh = String(h).padStart(2, '0');
+          const opt = document.createElement('option');
+          opt.value = hh; opt.textContent = hh;
+          sel.appendChild(opt);
+        }
+        sel.value = '00'; // por defecto
+      });
+      document.querySelectorAll('select[name$="_m"]').forEach(sel => {
+        sel.innerHTML = '';
+        ['00','15','30','45'].forEach(mm => {
+          const opt = document.createElement('option');
+          opt.value = mm; opt.textContent = mm;
+          sel.appendChild(opt);
+        });
+        sel.value = '00'; // por defecto
+      });
+    };
+    // Ejecutar al cargar
+    document.addEventListener('DOMContentLoaded', initHoraSelects);
+  </script>
+</body>
+</html>
