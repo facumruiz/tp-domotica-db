@@ -1,108 +1,79 @@
-// 📦 Importamos los módulos necesarios
-const express = require('express');           // Framework para crear el servidor web
-const sqlite3 = require('sqlite3').verbose(); // Módulo para manejar bases de datos SQLite
-const path = require('path');                 // Módulo para manejar rutas de archivos
-const cors = require('cors');                 // Middleware para permitir peticiones desde otros orígenes
+// 📦 Importamos módulos
+const express = require('express');
+const path = require('path');
+const cors = require('cors');
+const fs = require('fs');
 
-// 🚀 Creamos una instancia de la aplicación Express
+// 🚀 Creamos la app
 const app = express();
+const PORT = process.env.PORT || 5500; // compatible con Render/Vercel
 
-// 🔌 Definimos el puerto en el que se ejecutará el servidor
-const PORT = 5500;
-
-// 🔓 Activamos CORS para permitir peticiones desde el navegador
+// 🔓 CORS
 app.use(cors());
 
-// 🧠 Middleware para interpretar datos JSON enviados desde el frontend
+// 🧠 JSON middleware
 app.use(express.json());
 
-// 📁 Servimos archivos estáticos (HTML, CSS, JS) desde la carpeta actual
+// 📁 Archivos estáticos
 app.use(express.static(__dirname));
 
-// 🏠 Ruta principal: sirve el archivo HTML cuando se accede a la raíz del servidor
+// 🗂️ Cargar la base JSON
+function cargarDatos() {
+  const data = fs.readFileSync(path.join(__dirname, 'data.json'), 'utf-8');
+  return JSON.parse(data);
+}
+
+// 🏠 HTML principal
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html')); // Enviamos el archivo index.html
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 🧪 Ruta auxiliar para verificar los nombres reales de las columnas de la tabla
+// 🧪 Ver estructura → devuelve las claves del JSON
 app.get('/ver-estructura', (req, res) => {
-  const db = new sqlite3.Database('domotica_db.db'); // Abrimos la base de datos
-  db.all('PRAGMA table_info(tabladomotica_db)', (err, rows) => { // Consultamos la estructura de la tabla
-    if (err) {
-      res.status(500).json({ error: err.message }); // Si hay error, lo devolvemos
-    } else {
-      res.json(rows.map(col => col.name)); // Devolvemos solo los nombres de las columnas
-    }
-  });
-  db.close(); // Cerramos la base de datos
+  const datos = cargarDatos();
+  if (datos.length === 0) return res.json([]);
+
+  res.json(Object.keys(datos[0]));
 });
 
-// 📥 Ruta para consultar registros entre dos fechas y horas
+// 📥 Consulta entre fechas/horas
 app.post('/consulta-rango', (req, res) => {
-  // Extraemos los datos enviados desde el formulario del frontend
   const { fecha_inicio, hora_inicio, fecha_fin, hora_fin } = req.body;
 
-  // Abrimos la base de datos SQLite
-  const db = new sqlite3.Database('domotica_db.db');
+  const datos = cargarDatos();
 
-  // Consulta SQL para obtener los registros dentro del rango de fecha y hora
-  const query = `
-    SELECT 
-      fecha_db, hora_db,
-      temperatura_db_C,
-      humedad_db_porciento,
-      presencia_db,
-      nivel_luz_Lux,
-      tension_db_V,
-      corriente_db_A,
-      energia_db_kWh,
-      energia_acumulada_db_kWh
-    FROM tabladomotica_db
-    WHERE datetime(fecha_db || ' ' || hora_db) BETWEEN datetime(?) AND datetime(?)
-  `;
+  const inicio = new Date(`${fecha_inicio} ${hora_inicio}`);
+  const fin = new Date(`${fecha_fin} ${hora_fin}`);
 
-  // Armamos los parámetros con fecha y hora concatenadas
-  const parametros = [`${fecha_inicio} ${hora_inicio}`, `${fecha_fin} ${hora_fin}`];
-
-  // Ejecutamos la consulta SQL
-  db.all(query, parametros, (err, rows) => {
-    if (err) {
-      console.error('Error en /consulta-rango:', err.message); // Mostramos el error en consola
-      res.status(500).json({ error: err.message });             // Enviamos el error al frontend
-    } else {
-      res.json(rows); // Enviamos los resultados como JSON
-    }
+  const filtrados = datos.filter(item => {
+    const fechaItem = new Date(`${item.fecha_db} ${item.hora_db}`);
+    return fechaItem >= inicio && fechaItem <= fin;
   });
 
-  db.close(); // Cerramos la base de datos
+  res.json(filtrados);
 });
 
-// 📅 Ruta para obtener la fecha y hora del primer y último registro disponible
+// 📅 Limites: primer y último registro
 app.get('/limites', (req, res) => {
-  const db = new sqlite3.Database('domotica_db.db'); // Abrimos la base de datos
+  const datos = cargarDatos();
 
-  // Consulta SQL para obtener los extremos del rango de datos
-  const query = `
-    SELECT
-      MIN(datetime(fecha_db || ' ' || hora_db)) AS inicio,
-      MAX(datetime(fecha_db || ' ' || hora_db)) AS fin
-    FROM tabladomotica_db
-  `;
+  if (datos.length === 0) {
+    return res.json({ inicio: null, fin: null });
+  }
 
-  // Ejecutamos la consulta
-  db.all(query, (err, rows) => {
-    if (err) {
-      console.error('Error en /limites:', err.message); // Mostramos el error en consola
-      res.status(500).json({ error: err.message });      // Enviamos el error al frontend
-    } else {
-      res.json(rows[0]); // Enviamos el resultado como JSON
-    }
+  const fechas = datos.map(item => new Date(`${item.fecha_db} ${item.hora_db}`));
+
+  const inicio = new Date(Math.min(...fechas));
+  const fin = new Date(Math.max(...fechas));
+
+  res.json({
+    inicio: inicio.toISOString(),
+    fin: fin.toISOString()
   });
-
-  db.close(); // Cerramos la base de datos
 });
 
-// 🟢 Iniciamos el servidor y lo dejamos escuchando en el puerto definido
+// 🟢 Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`); // Mensaje en consola
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
