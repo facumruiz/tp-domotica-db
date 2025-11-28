@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <title>Panel Domótico</title>
@@ -11,10 +12,12 @@
       background-color: #f0f4f8;
       padding: 20px;
     }
+
     h1 {
       text-align: center;
       color: #333;
     }
+
     .bloque {
       background-color: #fff;
       border: 2px solid #0077cc;
@@ -22,21 +25,27 @@
       padding: 20px;
       margin: 20px auto;
       width: 95%;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
+
     form {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
       align-items: center;
     }
+
     label {
       min-width: 120px;
     }
-    input, select, button {
+
+    input,
+    select,
+    button {
       padding: 6px 8px;
       font-size: 1em;
     }
+
     button {
       background-color: #0077cc;
       color: white;
@@ -44,51 +53,78 @@
       border-radius: 6px;
       cursor: pointer;
     }
+
     button:hover {
       background-color: #005fa3;
     }
+
     .resultado {
       margin-top: 15px;
       background-color: #eef;
       padding: 10px;
       border-radius: 10px;
-      overflow-x: auto; /* permite scroll horizontal si la tabla es ancha */
+      overflow-x: auto;
+      /* permite scroll horizontal si la tabla es ancha */
     }
+
     table {
       border-collapse: collapse;
       width: 100%;
     }
-    th, td {
+
+    th,
+    td {
       border: 1px solid #ccc;
       padding: 6px;
       text-align: center;
     }
+
     th {
       background-color: #0077cc;
       color: white;
     }
+
     /* 🎨 Colores de alerta */
-    .tension-alta { background-color: #ffcccc; }   /* rojo tenue */
-    .tension-baja { background-color: #ccffcc; }   /* verde tenue */
-    .presencia { background-color: #cce5ff; }      /* celeste */
+    .tension-alta {
+      background-color: #ffcccc;
+    }
+
+    /* rojo tenue */
+    .tension-baja {
+      background-color: #ccffcc;
+    }
+
+    /* verde tenue */
+    .presencia {
+      background-color: #cce5ff;
+    }
+
+    /* celeste */
 
     /* 📊 Grillas de gráficos con separación marcada */
     .graficos {
       display: flex;
       flex-wrap: wrap;
-      column-gap: 80px;    /* separación entre columnas */
-      row-gap: 50px;       /* separación entre filas */
+      column-gap: 80px;
+      /* separación entre columnas */
+      row-gap: 50px;
+      /* separación entre filas */
       justify-content: center;
-      margin-top: 30px;    /* separación del bloque superior */
+      margin-top: 30px;
+      /* separación del bloque superior */
     }
+
     .grafico {
-      flex: 1 1 45%;       /* dos por fila */
+      flex: 1 1 45%;
+      /* dos por fila */
       min-width: 340px;
       max-width: 540px;
     }
+
     canvas {
       width: 100% !important;
-      height: 260px !important; /* gráficos más chicos */
+      height: 260px !important;
+      /* gráficos más chicos */
     }
   </style>
 
@@ -110,7 +146,8 @@
       <!-- ⏱️ Selector de hora: HH y MM (00/15/30/45) -->
       <select name="hora_inicio_h" required>
         <!-- 00 a 23 -->
-        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}</option>`).join('')}
+        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}
+        </option>`).join('')}
       </select>
       <select name="hora_inicio_m" required>
         <option value="00">00</option>
@@ -124,7 +161,8 @@
       <label>Hora (HH:MM):</label>
       <!-- ⏱️ Selector de hora: HH y MM (00/15/30/45) -->
       <select name="hora_fin_h" required>
-        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}</option>`).join('')}
+        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}
+        </option>`).join('')}
       </select>
       <select name="hora_fin_m" required>
         <option value="00">00</option>
@@ -147,7 +185,8 @@
       <label>Hora (HH:MM):</label>
       <!-- ⏱️ Selector de hora: HH y MM (00/15/30/45) -->
       <select name="hora_inicio_h" required>
-        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}</option>`).join('')}
+        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}
+        </option>`).join('')}
       </select>
       <select name="hora_inicio_m" required>
         <option value="00">00</option>
@@ -161,7 +200,8 @@
       <label>Hora (HH:MM):</label>
       <!-- ⏱️ Selector de hora: HH y MM (00/15/30/45) -->
       <select name="hora_fin_h" required>
-        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}</option>`).join('')}
+        ${Array.from({length:24},(_,h)=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}
+        </option>`).join('')}
       </select>
       <select name="hora_fin_m" required>
         <option value="00">00</option>
@@ -200,8 +240,68 @@
           `Datos disponibles desde ${data.inicio} hasta ${data.fin}`;
       });
 
+    async function consultarRango() {
+      const form = document.getElementById('formConsultaRango');
+      const datos = {
+        fecha_inicio: form.querySelector('[name="fecha_inicio"]').value,
+        hora_inicio: horaSeleccion(form, 'hora_inicio'),
+        fecha_fin: form.querySelector('[name="fecha_fin"]').value,
+        hora_fin: horaSeleccion(form, 'hora_fin')
+      };
+
+      try {
+        const res = await fetch('/consulta-rango', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+
+        const resultado = await res.json();
+        if (resultado.length > 0) {
+
+          let tabla = '<table><thead><tr>';
+          Object.keys(resultado[0]).forEach(col => { tabla += `<th>${col}</th>`; });
+          tabla += '</tr></thead><tbody>';
+
+          resultado.forEach(row => {
+            tabla += '<tr>';
+            Object.entries(row).forEach(([col, val]) => {
+              let clase = '';
+
+              if (col === 'tension_db_V') {
+                if (val > 230) clase = 'tension-alta';
+                else if (val < 215) clase = 'tension-baja';
+              }
+
+              if (col === 'presencia_db' && val == 1) clase = 'presencia';
+
+              if (col === 'hora_db' && typeof val === 'string') val = val.slice(0, 5);
+
+              if (col === 'energia_db_kWh' || col === 'energia_acumulada_db_kWh') {
+                const n = Number(val);
+                val = Number.isFinite(n) ? n.toFixed(2) : val;
+              }
+
+              tabla += `<td class="${clase}">${val}</td>`;
+            });
+            tabla += '</tr>';
+          });
+
+          tabla += '</tbody></table>';
+          document.getElementById('resultadoConsultaRango').innerHTML = tabla;
+
+        } else {
+          document.getElementById('resultadoConsultaRango').innerHTML =
+            '<p>No se encontraron datos.</p>';
+        }
+      } catch (error) {
+        document.getElementById('resultadoConsultaRango').innerHTML =
+          `<p>Error: ${error.message}</p>`;
+      }
+    }
+
     // 📋 Consulta detallada por rango (bloque 1)
-    document.getElementById('formConsultaRango').onsubmit = async function(e) {
+    document.getElementById('formConsultaRango').onsubmit = async function (e) {
       e.preventDefault();
       const form = this;
       const datos = {
@@ -265,7 +365,7 @@
     let chartPresencia = null;
 
     // 📊 Consulta con gráficos agrupados (bloque 2)
-    document.getElementById('formEnergia').onsubmit = async function(e) {
+    document.getElementById('formEnergia').onsubmit = async function (e) {
       e.preventDefault();
       const form = this;
       const datos = {
@@ -421,7 +521,7 @@
       });
       document.querySelectorAll('select[name$="_m"]').forEach(sel => {
         sel.innerHTML = '';
-        ['00','15','30','45'].forEach(mm => {
+        ['00', '15', '30', '45'].forEach(mm => {
           const opt = document.createElement('option');
           opt.value = mm; opt.textContent = mm;
           sel.appendChild(opt);
@@ -431,6 +531,37 @@
     };
     // Ejecutar al cargar
     document.addEventListener('DOMContentLoaded', initHoraSelects);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Valores por defecto
+      const fechaDefault = "2025-11-03";
+      const horaInicioH = "00";
+      const horaInicioM = "00";
+      const horaFinH = "06";
+      const horaFinM = "00";
+
+      // Formulario 1 (Consulta Detallada)
+      const f1 = document.getElementById('formConsultaRango');
+      f1.querySelector('[name="fecha_inicio"]').value = fechaDefault;
+      f1.querySelector('[name="hora_inicio_h"]').value = horaInicioH;
+      f1.querySelector('[name="hora_inicio_m"]').value = horaInicioM;
+      f1.querySelector('[name="fecha_fin"]').value = fechaDefault;
+      f1.querySelector('[name="hora_fin_h"]').value = horaFinH;
+      f1.querySelector('[name="hora_fin_m"]').value = horaFinM;
+
+      // Formulario 2 (Gráficos)
+      const f2 = document.getElementById('formEnergia');
+      f2.querySelector('[name="fecha_inicio"]').value = fechaDefault;
+      f2.querySelector('[name="hora_inicio_h"]').value = horaInicioH;
+      f2.querySelector('[name="hora_inicio_m"]').value = horaInicioM;
+      f2.querySelector('[name="fecha_fin"]').value = fechaDefault;
+      f2.querySelector('[name="hora_fin_h"]').value = horaFinH;
+      f2.querySelector('[name="hora_fin_m"]').value = horaFinM;
+
+      consultarRango();
+    });
+
   </script>
 </body>
+
 </html>
